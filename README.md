@@ -12,7 +12,7 @@
 
 Tools for publishing small stuff to the net.
 
-```python {test_file=abc.txt}
+```python{test_file=abc.txt}
 import os
 print('abc')
 ```
