@@ -1,3 +1,4 @@
+[![Python application](https://github.com/diggydev/smol/actions/workflows/python-app.yml/badge.svg)](https://github.com/diggydev/smol/actions/workflows/python-app.yml)
 
 ```
                                   ████ 
