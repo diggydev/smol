@@ -1,4 +1,5 @@
-from smol import smol
+from src.smol import smol
+
 
 def test_add():
-  assert 3 == smol.add(1,2)
+    assert 3 == smol.add(1, 2)
