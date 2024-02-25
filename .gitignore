@@ -1,6 +1,5 @@
 .idea
-__pycache__
-bin
-lib
 dist
+*__pycache__/
 mail
+Pipfile.lock

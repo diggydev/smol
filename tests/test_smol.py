@@ -1,4 +1,4 @@
-from src.smol import smol
+from smol import smol
 
 
 def test_add():
