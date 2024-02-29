@@ -2,6 +2,7 @@ from importlib import resources
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 from smol import smol
+from pathlib import Path
 import tests.resources
 
 
@@ -41,7 +42,7 @@ def inbox_contains_author_emails(app, tmp_path):
 
 @given("the application is at the main menu")
 def application_at_main_menu(app):
-    app.screen = 'main'
+    app.screen = smol.Screen.MAIN_MENU
 
 
 @when('the site administrator chooses "new post from email"')
@@ -51,7 +52,7 @@ def select_new_post_from_email(app):
 
 @then('the emails from the author are displayed')
 def verify_emails_displayed(app):
-    assert str(app.screen) == 'Sun, 28 Jan 2024 00:17:52 GMT / My first post\n'
+    assert str(app.get_menu()) == 'Sun, 28 Jan 2024 10:17:52 GMT / My first post\n'
 
 
 @given("the current directory does not contain the directory .smol")
@@ -78,7 +79,7 @@ def application_at_email_menu(app, tmp_path):
 
 @when('the site administrator chooses an email')
 def choose_an_email(app):
-    app.update(1)
+    app.update(0)
 
 
 @when('the site administrator enters a publication date')
@@ -92,5 +93,10 @@ def choose_tags(app):
 
 
 @then('the new post is created')
-def verify_new_post():
-    pass
+def verify_new_post(tmp_path, app):
+    root = tmp_path.joinpath(app.config['gemlog']['path'])
+    assert root.is_dir()
+    index = root.joinpath('index.gmi')
+    assert index.exists()
+    post = root.joinpath('posts', 'title.gmi')
+    assert post.exists()
