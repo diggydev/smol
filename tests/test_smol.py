@@ -1,26 +1,65 @@
-import os
+from importlib import resources
+import pytest
 from pytest_bdd import scenario, given, when, then, parsers
-from pathlib import Path
 from smol import smol
+import tests.resources
 
 
-@scenario('first_run.feature', 'generate the default config')
+@pytest.fixture()
+def app(tmp_path):
+    return smol.App(tmp_path)
+
+
+@scenario('generate_default_config.feature', 'Generate the default config')
 def test_generate_config():
     pass
 
 
-@given("there is no config directory at .smol")
-def no_config(tmpdir: Path):
-    smol.smol_path = tmpdir
+@scenario('posting_from_email.feature', 'View the list of available emails')
+def test_view_email_list():
+    pass
 
 
-@when("I launch smol")
-def launch():
-    smol.main()
+def copy_resource_file_to_tmpdir(tmp_path, source):
+    dest_path = tmp_path.joinpath(source)
+    with open(dest_path, 'w') as f:
+        config_text = resources.read_text('tests.resources', source)
+        f.write(config_text)
+    return dest_path
+
+
+@given("the email inbox contains emails from the author")
+def inbox_contains_author_emails(app, tmp_path):
+    mail_path = copy_resource_file_to_tmpdir(tmp_path, 'mail')
+    app.config['paths']['mail'] = str(mail_path)
+
+
+@given("the application is at the main menu")
+def application_at_main_menu(app):
+    app.screen = 'main'
+
+
+@when('the site administrator chooses "new post from email"')
+def select_new_post_from_email(app):
+    app.update('new post from email')
+
+
+@then('the emails from the author are displayed')
+def verify_emails_displayed(app):
+    assert app.screen == 'Sun, 28 Jan 2024 00:17:52 GMT / My first post'
+
+
+@given("the current directory does not contain the directory .smol")
+def no_config():
+    pass
+
+
+@when("the application is started")
+def launch(app):
+    pass
 
 
 @then(parsers.parse("the file {file_path} exists"))
-def config_content(file_path):
-    path = Path(f'{smol.smol_path}{os.sep}{file_path}')
-    assert path.is_file(), f'Files: {os.listdir(smol.smol_path)} Path: {file_path}'
-
+def verify_file_exists(tmp_path, file_path):
+    expected_file = tmp_path.joinpath(file_path)
+    assert expected_file.exists(), f'{str(expected_file)} does not exist'
