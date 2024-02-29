@@ -20,6 +20,11 @@ def test_view_email_list():
     pass
 
 
+@scenario('posting_from_email.feature', 'Select an email to use as a new post')
+def test_select_an_email():
+    pass
+
+
 def copy_resource_file_to_tmpdir(tmp_path, source):
     dest_path = tmp_path.joinpath(source)
     with open(dest_path, 'w') as f:
@@ -31,7 +36,7 @@ def copy_resource_file_to_tmpdir(tmp_path, source):
 @given("the email inbox contains emails from the author")
 def inbox_contains_author_emails(app, tmp_path):
     mail_path = copy_resource_file_to_tmpdir(tmp_path, 'mail')
-    app.config['paths']['mail'] = str(mail_path)
+    app.config['mail']['path'] = str(mail_path)
 
 
 @given("the application is at the main menu")
@@ -46,7 +51,7 @@ def select_new_post_from_email(app):
 
 @then('the emails from the author are displayed')
 def verify_emails_displayed(app):
-    assert app.screen == 'Sun, 28 Jan 2024 00:17:52 GMT / My first post'
+    assert str(app.screen) == 'Sun, 28 Jan 2024 00:17:52 GMT / My first post\n'
 
 
 @given("the current directory does not contain the directory .smol")
@@ -63,3 +68,29 @@ def launch(app):
 def verify_file_exists(tmp_path, file_path):
     expected_file = tmp_path.joinpath(file_path)
     assert expected_file.exists(), f'{str(expected_file)} does not exist'
+
+
+@given('the application is at the email selection menu')
+def application_at_email_menu(app, tmp_path):
+    inbox_contains_author_emails(app, tmp_path)
+    select_new_post_from_email(app)
+
+
+@when('the site administrator chooses an email')
+def choose_an_email(app):
+    app.update(1)
+
+
+@when('the site administrator enters a publication date')
+def choose_pub_date(app):
+    app.update('2024-02-29')
+
+
+@when('the site administrator chooses tags')
+def choose_tags(app):
+    app.update(['tag1', 'tag2'])
+
+
+@then('the new post is created')
+def verify_new_post():
+    pass

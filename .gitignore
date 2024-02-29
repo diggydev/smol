@@ -1,5 +1,4 @@
 .idea
 dist
 *__pycache__/
-mail
 Pipfile.lock

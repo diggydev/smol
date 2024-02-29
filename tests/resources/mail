@@ -1,0 +1,29 @@
+
+From new@example.com Sun 28 Jan 2024 00:17:52 GMT
+Date: Sun, 28 Jan 2024 00:17:52 GMT
+From: new <new@example.com>
+To: admin@example.com
+Subject: Welcome!
+Status: RO
+Content-Length: 74
+Lines: 4
+
+This is my very important message.
+
+I hope you enjoy reading it.
+
+Goodbye.
+
+
+From author@example.com Sun 28 Jan 2024 10:17:52 GMT
+Date: Sun, 28 Jan 2024 10:17:52 GMT
+From: author <author@example.com>
+To: admin@example.com
+Subject: My first post
+Status: RO
+Content-Length: 41
+Lines: 2
+
+# Title of my first post
+
+Here is my post
