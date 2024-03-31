@@ -1,4 +1,3 @@
-import curses
 from enum import Enum
 from pathlib import Path
 import importlib
@@ -34,10 +33,13 @@ class App:
             if user_input == 'new post from email':
                 self.screen = Screen.EMAIL_MENU
         elif self.screen == Screen.EMAIL_MENU:
+            print('user_input')
+            print(user_input)
             self.post = Post(user_input.email.get_payload())
             self.screen = Screen.DATE_MENU
         elif self.screen == Screen.DATE_MENU:
             self.post.date = user_input
+            self.post.year = user_input[:4]
             self.screen = Screen.TAG_MENU
         elif self.screen == Screen.TAG_MENU:
             for tag in user_input:
@@ -48,18 +50,17 @@ class App:
         if self.screen in self.screens:
             return self.screens[self.screen]
         elif self.screen == Screen.MAIN_MENU:
-            self.screens[Screen.MAIN_MENU] = Menu()
+            self.screens[Screen.MAIN_MENU] = Menu('Select an operation')
             self.screens[Screen.MAIN_MENU].append('new post from email')
         elif self.screen == Screen.EMAIL_MENU:
-            self.screens[Screen.EMAIL_MENU] = Menu()
+            self.screens[Screen.EMAIL_MENU] = Menu('Select an email')
             for mail in mbox(self.config['mail']['path']):
                 if self.config['mail']['author_email'] == mail['From'][mail['From'].find('<')+1:-1].strip():
                     self.screens[Screen.EMAIL_MENU].append(EmailMenuItem(mail))
         elif self.screen == Screen.DATE_MENU:
-            self.screens[Screen.DATE_MENU] = Menu()
-            self.screens[Screen.DATE_MENU].append('2024-03-27')
+            self.screens[Screen.DATE_MENU] = Menu('Enter a date (format: 2024-01-31)')
         elif self.screen == Screen.TAG_MENU:
-            self.screens[Screen.TAG_MENU] = Menu()
+            self.screens[Screen.TAG_MENU] = Menu('Choose an existing tag or add a new one:')
             self.screens[Screen.TAG_MENU].append('general')
         return self.screens[self.screen]
 
@@ -70,7 +71,8 @@ class App:
         with open(index, 'w') as f:
             f.write('# The Index')
         gemlog_root.joinpath('posts').mkdir()
-        post_path = gemlog_root.joinpath('posts', 'title.gmi')
+        gemlog_root.joinpath('posts').joinpath(self.post.year).mkdir()
+        post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.year[5:]}-title.gmi')
         with open(post_path, 'w') as f:
             f.write(self.post.text)
 
@@ -83,8 +85,9 @@ class Screen(Enum):
 
 
 class Menu:
-    def __init__(self):
+    def __init__(self, title):
         self.items = []
+        self.title = title
 
     def append(self, item):
         self.items.append(item)
@@ -97,25 +100,11 @@ class Menu:
         elif key == 'q':
             return 'quit'
 
-    # def __str__(self):
-    #     menu_str = ''
-    #     for item in self.items:
-    #         menu_str += f'{str(item)}\n'
-    #     return menu_str
-
-    def draw(self, w):
+    def draw(self):
+        print(self.title)
         for row in range(0, len(self.items)):
-            w.addstr(row, 0, f'{row + 1}. {str(self.items[row])}')
-            row += 1
-        w.addstr(row, 0, 'q. quit')
-
-    # def update(self, k):
-    #     if k.isdigit():
-    #         k_num = int(k)
-    #         if 0 < k_num <= len(self.items):
-    #             self.items[k_num - 1].operation()
-    #     elif k == 'q':
-    #         exit(0)
+            print(f'{row + 1}. {str(self.items[row])}')
+        print('q. quit')
 
 
 class MenuItem:
@@ -139,29 +128,27 @@ class Post:
     def __init__(self, text):
         self.text = text
         self.date = None
+        self.year = None
         self.tags = []
 
     def add_tag(self, tag):
         self.tags.append(tag)
 
 
-def update(w, app: App):
-    k = w.getkey()
+def update(app: App):
+    k = input()
     app.update(app.get_menu().get_item(k))
-    # app.get_menu().update(k)
 
 
-def draw(w, app):
-    w.clear()
-    app.get_menu().draw(w)
-    w.refresh()
+def draw(app: App):
+    app.get_menu().draw()
 
 
-def cli(w, app):
+def ui(app: App):
     while True:
-        draw(w, app)
-        update(w, app)
+        draw(app)
+        update(app)
 
 
 if __name__ == '__main__':
-    curses.wrapper(cli, App(Path('.')))
+    ui(App(Path('.')))

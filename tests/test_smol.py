@@ -52,7 +52,8 @@ def select_new_post_from_email(app):
 
 @then('the emails from the author are displayed')
 def verify_emails_displayed(app):
-    assert str(app.get_menu()) == 'Sun, 28 Jan 2024 10:17:52 GMT / My first post\n'
+    assert len(app.get_menu().items) == 1
+    assert str(app.get_menu().items[0]) == 'Sun, 28 Jan 2024 10:17:52 GMT / My first post'
 
 
 @given("the current directory does not contain the directory .smol")
@@ -79,7 +80,7 @@ def application_at_email_menu(app, tmp_path):
 
 @when('the site administrator chooses an email')
 def choose_an_email(app):
-    app.update(0)
+    app.update(app.get_menu().get_item('1'))
 
 
 @when('the site administrator enters a publication date')
@@ -98,5 +99,5 @@ def verify_new_post(tmp_path, app):
     assert root.is_dir()
     index = root.joinpath('index.gmi')
     assert index.exists()
-    post = root.joinpath('posts', 'title.gmi')
+    post = root.joinpath('posts', '2024', '02-29-title.gmi')
     assert post.exists()
