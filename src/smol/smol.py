@@ -9,15 +9,16 @@ import src.smol.resources
 
 class App:
     def __init__(self, working_dir):
+        self.running = True
         self.working_dir = working_dir
         if not working_dir.joinpath('.smol').exists():
             working_dir.joinpath('.smol').mkdir()
-        config_path = working_dir.joinpath('.smol', 'config.ini')
-        if config_path.exists():
-            with open(config_path, 'r') as f:
+        self.config_path = working_dir.joinpath('.smol', 'config.ini')
+        if self.config_path.exists():
+            with open(self.config_path, 'r') as f:
                 config_text = f.read()
         else:
-            with open(config_path, 'w') as f:
+            with open(self.config_path, 'w') as f:
                 config_text = importlib.resources.read_text('src.smol.resources', 'config.ini')
                 f.write(config_text)
         self.config = configparser.ConfigParser()
@@ -28,13 +29,11 @@ class App:
 
     def update(self, user_input):
         if user_input == 'quit':
-            exit(0)
+            self.running = False
         if self.screen == Screen.MAIN_MENU:
             if user_input == 'new post from email':
                 self.screen = Screen.EMAIL_MENU
         elif self.screen == Screen.EMAIL_MENU:
-            print('user_input')
-            print(user_input)
             self.post = Post(user_input.email.get_payload())
             self.screen = Screen.DATE_MENU
         elif self.screen == Screen.DATE_MENU:
@@ -42,9 +41,21 @@ class App:
             self.post.year = user_input[:4]
             self.screen = Screen.TAG_MENU
         elif self.screen == Screen.TAG_MENU:
-            for tag in user_input:
-                self.post.add_tag(tag)
-            self.write_post()
+            if user_input.startswith('[ ] '):
+                self.post.add_tag(user_input.split('[ ] ')[1])
+                self.screens.pop(Screen.TAG_MENU, None)
+            elif user_input.startswith('[x] '):
+                self.post.remove_tag(user_input.split('[x] ')[1])
+                self.screens.pop(Screen.TAG_MENU, None)
+            elif user_input == 'continue with selected tags':
+                self.write_post()
+                self.running = False
+            else:
+                self.config['gemlog']['tags'] = f'{self.config["gemlog"]["tags"]},{user_input}'
+                with open(self.config_path, 'w') as configfile:
+                    self.config.write(configfile)
+                self.post.add_tag(user_input)
+                self.screens.pop(Screen.TAG_MENU, None)
 
     def get_menu(self):
         if self.screen in self.screens:
@@ -60,21 +71,35 @@ class App:
         elif self.screen == Screen.DATE_MENU:
             self.screens[Screen.DATE_MENU] = Menu('Enter a date (format: 2024-01-31)')
         elif self.screen == Screen.TAG_MENU:
-            self.screens[Screen.TAG_MENU] = Menu('Choose an existing tag or add a new one:')
-            self.screens[Screen.TAG_MENU].append('general')
+            self.screens[Screen.TAG_MENU] = Menu('Toggle existing tags or type a new one:')
+            for tag in self.config['gemlog']['tags'].split(','):
+                if tag in self.post.tags:
+                    checkbox_and_tag = f'[x] {tag}'
+                else:
+                    checkbox_and_tag = f'[ ] {tag}'
+                self.screens[Screen.TAG_MENU].append(checkbox_and_tag)
+            self.screens[Screen.TAG_MENU].append('continue with selected tags')
         return self.screens[self.screen]
 
     def write_post(self):
         gemlog_root = self.working_dir.joinpath(self.config['gemlog']['path'])
-        gemlog_root.mkdir()
+        gemlog_root.mkdir(exist_ok=True)
         index = gemlog_root.joinpath('index.gmi')
         with open(index, 'w') as f:
             f.write('# The Index')
-        gemlog_root.joinpath('posts').mkdir()
-        gemlog_root.joinpath('posts').joinpath(self.post.year).mkdir()
+            # TODO update index, latest posts, tag count etc
+        gemlog_root.joinpath('posts').mkdir(exist_ok=True)
+        gemlog_root.joinpath('posts').joinpath(self.post.year).mkdir(exist_ok=True)
+        # TODO update index file in year dir
         post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.date[5:]}-title.gmi')
         with open(post_path, 'w') as f:
             f.write(self.post.text)
+            # TODO write post footer
+        gemlog_root.joinpath('tags').mkdir(exist_ok=True)
+        for tag in self.post.tags:
+            tag_path = gemlog_root.joinpath('tags', f'{tag}.gmi')
+            # TODO update tag file
+            # TODO update index file in tag dir
 
 
 class Screen(Enum):
@@ -99,8 +124,8 @@ class Menu:
                 return self.items[k_num - 1]
         elif key == 'q':
             return 'quit'
-        # else:
-        #     return key
+        else:
+            return key
 
     def draw(self):
         print(self.title)
@@ -136,6 +161,9 @@ class Post:
     def add_tag(self, tag):
         self.tags.append(tag)
 
+    def remove_tag(self, tag):
+        self.tags.remove(tag)
+
 
 def update(app: App):
     k = input()
@@ -147,7 +175,7 @@ def draw(app: App):
 
 
 def ui(app: App):
-    while True:
+    while app.running:
         draw(app)
         update(app)
 

@@ -90,7 +90,8 @@ def choose_pub_date(app):
 
 @when('the site administrator chooses tags')
 def choose_tags(app):
-    app.update(['tag1', 'tag2'])
+    app.update('[ ] general')
+    app.update('continue with selected tags')
 
 
 @then('the new post is created')
