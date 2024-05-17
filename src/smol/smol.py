@@ -72,7 +72,7 @@ class App:
             f.write('# The Index')
         gemlog_root.joinpath('posts').mkdir()
         gemlog_root.joinpath('posts').joinpath(self.post.year).mkdir()
-        post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.year[5:]}-title.gmi')
+        post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.date[5:]}-title.gmi')
         with open(post_path, 'w') as f:
             f.write(self.post.text)
 
@@ -99,6 +99,8 @@ class Menu:
                 return self.items[k_num - 1]
         elif key == 'q':
             return 'quit'
+        # else:
+        #     return key
 
     def draw(self):
         print(self.title)
