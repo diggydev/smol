@@ -1,0 +1,15 @@
+# My Gemlog
+
+Here is where I post some things
+
+## Latest posts
+
+{latest:10}
+
+## Tags
+
+{tags}
+
+## Everything
+
+=> posts/index.gmi All posts

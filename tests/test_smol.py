@@ -88,6 +88,11 @@ def choose_pub_date(app):
     app.update('2024-02-29')
 
 
+@when('the site administrator enters a slug')
+def choose_slug(app):
+    app.update('title')
+
+
 @when('the site administrator chooses tags')
 def choose_tags(app):
     app.update('[ ] general')

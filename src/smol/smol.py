@@ -11,16 +11,22 @@ class App:
     def __init__(self, working_dir):
         self.running = True
         self.working_dir = working_dir
-        if not working_dir.joinpath('.smol').exists():
-            working_dir.joinpath('.smol').mkdir()
-        self.config_path = working_dir.joinpath('.smol', 'config.ini')
+        self.config_dir = working_dir.joinpath('.smol')
+        self.config_dir.mkdir(exist_ok=True)
+        self.config_path = self.config_dir.joinpath('config.ini')
+        self.template_path = self.config_dir.joinpath('template.gmi')
         if self.config_path.exists():
             with open(self.config_path, 'r') as f:
                 config_text = f.read()
+            with open(self.template_path, 'r') as f:
+                self.template = f.read()
         else:
             with open(self.config_path, 'w') as f:
                 config_text = importlib.resources.read_text('src.smol.resources', 'config.ini')
                 f.write(config_text)
+            with open(self.template_path, 'w') as f:
+                self.template = importlib.resources.read_text('src.smol.resources', 'template.gmi')
+                f.write(self.template)
         self.config = configparser.ConfigParser()
         self.config.read_string(config_text)
         self.screen = Screen.MAIN_MENU
@@ -39,6 +45,9 @@ class App:
         elif self.screen == Screen.DATE_MENU:
             self.post.date = user_input
             self.post.year = user_input[:4]
+            self.screen = Screen.SLUG_MENU
+        elif self.screen == Screen.SLUG_MENU:
+            self.post.slug = user_input
             self.screen = Screen.TAG_MENU
         elif self.screen == Screen.TAG_MENU:
             if user_input.startswith('[ ] '):
@@ -70,6 +79,8 @@ class App:
                     self.screens[Screen.EMAIL_MENU].append(EmailMenuItem(mail))
         elif self.screen == Screen.DATE_MENU:
             self.screens[Screen.DATE_MENU] = Menu('Enter a date (format: 2024-01-31)')
+        elif self.screen == Screen.SLUG_MENU:
+            self.screens[Screen.SLUG_MENU] = Menu('Enter a slug (format: my-great-post)')
         elif self.screen == Screen.TAG_MENU:
             self.screens[Screen.TAG_MENU] = Menu('Toggle existing tags or type a new one:')
             for tag in self.config['gemlog']['tags'].split(','):
@@ -82,16 +93,19 @@ class App:
         return self.screens[self.screen]
 
     def write_post(self):
+        post_csv = self.config_dir.joinpath('posts.csv')
+        with open(post_csv, 'a') as f:
+            f.write(f'{self.post.get_record()}\n')
         gemlog_root = self.working_dir.joinpath(self.config['gemlog']['path'])
         gemlog_root.mkdir(exist_ok=True)
         index = gemlog_root.joinpath('index.gmi')
         with open(index, 'w') as f:
-            f.write('# The Index')
+            f.write(self.template)
             # TODO update index, latest posts, tag count etc
         gemlog_root.joinpath('posts').mkdir(exist_ok=True)
         gemlog_root.joinpath('posts').joinpath(self.post.year).mkdir(exist_ok=True)
         # TODO update index file in year dir
-        post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.date[5:]}-title.gmi')
+        post_path = gemlog_root.joinpath('posts', self.post.year, f'{self.post.get_filename()}')
         with open(post_path, 'w') as f:
             f.write(self.post.text)
             # TODO write post footer
@@ -106,7 +120,8 @@ class Screen(Enum):
     MAIN_MENU = 1
     EMAIL_MENU = 2
     DATE_MENU = 3
-    TAG_MENU = 4
+    SLUG_MENU = 4
+    TAG_MENU = 5
 
 
 class Menu:
@@ -156,6 +171,7 @@ class Post:
         self.text = text
         self.date = None
         self.year = None
+        self.slug = None
         self.tags = []
 
     def add_tag(self, tag):
@@ -163,6 +179,18 @@ class Post:
 
     def remove_tag(self, tag):
         self.tags.remove(tag)
+
+    def get_title(self):
+        for line in self.text.split('\n'):
+            if line.startswith('# '):
+                return line[2:].strip()
+        return None
+
+    def get_filename(self):
+        return f'{self.date[5:]}-{self.slug}.gmi'
+
+    def get_record(self):
+        return f'{self.year}|{self.get_filename()}|{self.get_title()}|{",".join(self.tags)}'
 
 
 def update(app: App):

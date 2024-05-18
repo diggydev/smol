@@ -9,5 +9,6 @@ Feature: Posting from email
     Given the application is at the email selection menu
     When the site administrator chooses an email
     And the site administrator enters a publication date
+    And the site administrator enters a slug
     And the site administrator chooses tags
     Then the new post is created
